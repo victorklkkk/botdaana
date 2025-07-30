@@ -93,7 +93,7 @@ class VerificacaoCog(commands.Cog):
         self.bot.add_view(VerificationView())
 
     # Comando de setup com o novo nome
-    @commands.command(name="setup verif")
+    @commands.command(name="setup verificacao")
     @commands.has_permissions(administrator=True)
     async def setup_verificacao_ref(self, ctx: commands.Context):
         """Cria a mensagem de verificação por referência no canal atual."""
