@@ -4,11 +4,17 @@ import discord
 from discord.ext import commands
 from discord import ui
 
-# ID do seu canal de logs, já implementado conforme solicitado.
+# --- CONFIGURAÇÕES DO COG ---
+
+# ID do seu canal de logs.
 CANAL_LOGS_VERIFICACAO_ID = 1391938919842451472
 
+# Nome do cargo que será atribuído ao usuário verificado.
+# Certifique-se de que este cargo existe no seu servidor!
+CARGO_VERIFICADO_NOME = "tops"
+
+
 # --- CLASSES DA INTERFACE (VIEWS E MODAL) ---
-# Estas classes definem os botões e a janela de formulário.
 
 class AdminApprovalView(ui.View):
     """View com os botões de Aprovar/Reprovar para os Admins."""
@@ -29,9 +35,9 @@ class AdminApprovalView(ui.View):
         membro_a_verificar = await self.get_member(interaction)
         if not membro_a_verificar:
             return
-
-        nome_cargo = "Verificado"
-        cargo = discord.utils.get(interaction.guild.roles, name=nome_cargo)
+        
+        # Usa a variável de configuração para encontrar o cargo
+        cargo = discord.utils.get(interaction.guild.roles, name=CARGO_VERIFICADO_NOME)
         
         if cargo:
             try:
@@ -44,7 +50,7 @@ class AdminApprovalView(ui.View):
             except discord.Forbidden:
                 await interaction.response.send_message("❌ Erro: Não tenho permissão para atribuir cargos.", ephemeral=True)
         else:
-            await interaction.response.send_message(f"⚠️ O cargo `{nome_cargo}` não foi encontrado. Por favor, crie-o primeiro.", ephemeral=True)
+            await interaction.response.send_message(f"⚠️ O cargo `{CARGO_VERIFICADO_NOME}` não foi encontrado. Por favor, crie-o primeiro.", ephemeral=True)
 
     @ui.button(label="Reprovar", style=discord.ButtonStyle.red, custom_id="reprovar_verificacao_ref")
     async def reprovar_callback(self, interaction: discord.Interaction, button: ui.Button):
@@ -83,7 +89,7 @@ class VerificationModal(ui.Modal, title="Formulário de Verificação"):
 class VerificationView(ui.View):
     """A View principal com o botão 'Iniciar Verificação' que fica na mensagem."""
     def __init__(self):
-        super().__init__(timeout=None) # Timeout None torna a View persistente.
+        super().__init__(timeout=None)
 
     @ui.button(label="Iniciar Verificação", style=discord.ButtonStyle.blurple, custom_id="iniciar_verificacao_ref")
     async def button_callback(self, interaction: discord.Interaction, button: ui.Button):
@@ -97,20 +103,14 @@ class VerificacaoCog(commands.Cog):
     """Cog que agrupa todos os comandos e lógicas de verificação."""
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        # Adiciona a View persistente aqui para que os botões sempre funcionem.
         self.bot.add_view(VerificationView())
 
-    # --- ESTRUTURA DE COMANDO COM GRUPO ---
-    
-    # 1. Cria um grupo de comandos chamado 'setup'
     @commands.group(name="setup")
     @commands.has_permissions(administrator=True)
     async def setup(self, ctx: commands.Context):
-        # Se o usuário digitar apenas "!setup", o bot pode responder isto.
         if ctx.invoked_subcommand is None:
             await ctx.send("Comando de setup inválido. Use `!setup verif` para configurar a verificação.", delete_after=10)
 
-    # 2. Cria o subcomando 'verif' dentro do grupo 'setup'
     @setup.command(name="verif")
     @commands.has_permissions(administrator=True)
     async def setup_verif(self, ctx: commands.Context):
@@ -124,8 +124,6 @@ class VerificacaoCog(commands.Cog):
         await ctx.message.delete()
 
 # --- FUNÇÃO SETUP DO COG ---
-# Esta função é chamada pelo `main.py` para carregar o Cog.
-
 async def setup(bot: commands.Bot):
     """Carrega o Cog de Verificação no bot."""
     await bot.add_cog(VerificacaoCog(bot))
