@@ -9,9 +9,9 @@ from discord import ui
 # ID do seu canal de logs.
 CANAL_LOGS_VERIFICACAO_ID = 1391938919842451472
 
-# Nome do cargo que será atribuído ao usuário verificado.
-# Certifique-se de que este cargo existe no seu servidor!
-CARGO_VERIFICADO_NOME = "tops"
+# ID do cargo que será atribuído ao usuário verificado.
+# Certifique-se de que este ID está correto!
+CARGO_VERIFICADO_ID = 1391938919528009838  # <--- SUBSTITUA ESTE VALOR PELO ID DO CARGO
 
 
 # --- CLASSES DA INTERFACE (VIEWS E MODAL) ---
@@ -36,8 +36,8 @@ class AdminApprovalView(ui.View):
         if not membro_a_verificar:
             return
         
-        # Usa a variável de configuração para encontrar o cargo
-        cargo = discord.utils.get(interaction.guild.roles, name=CARGO_VERIFICADO_NOME)
+        # Usa o ID para encontrar o cargo de forma muito mais segura
+        cargo = interaction.guild.get_role(CARGO_VERIFICADO_ID)
         
         if cargo:
             try:
@@ -50,47 +50,41 @@ class AdminApprovalView(ui.View):
             except discord.Forbidden:
                 await interaction.response.send_message("❌ Erro: Não tenho permissão para atribuir cargos.", ephemeral=True)
         else:
-            await interaction.response.send_message(f"⚠️ O cargo `{CARGO_VERIFICADO_NOME}` não foi encontrado. Por favor, crie-o primeiro.", ephemeral=True)
+            await interaction.response.send_message(f"⚠️ O cargo com o ID configurado não foi encontrado neste servidor.", ephemeral=True)
 
     @ui.button(label="Reprovar", style=discord.ButtonStyle.red, custom_id="reprovar_verificacao_ref")
     async def reprovar_callback(self, interaction: discord.Interaction, button: ui.Button):
+        # ... (esta função não precisa de alterações)
         membro_a_verificar = await self.get_member(interaction)
         if not membro_a_verificar:
             return
-
         await interaction.response.send_message(f"❌ O pedido de verificação de {membro_a_verificar.mention} foi reprovado por {interaction.user.mention}.", ephemeral=True)
-        
         for item in self.children:
             item.disabled = True
         await interaction.message.edit(view=self)
 
 
 class VerificationModal(ui.Modal, title="Formulário de Verificação"):
-    """O formulário (pop-up) que o usuário preenche."""
+    # ... (esta classe não precisa de alterações)
     referencia = ui.TextInput(label="Quem você conhece no servidor?", placeholder="Escreva o nome de usuário (ex: joao123)", required=True, style=discord.TextStyle.short)
-
     async def on_submit(self, interaction: discord.Interaction):
         canal_logs = interaction.client.get_channel(CANAL_LOGS_VERIFICACAO_ID)
         if not canal_logs:
             await interaction.response.send_message("Ocorreu um erro interno: Canal de logs não configurado.", ephemeral=True)
             return
-
         embed = discord.Embed(title="📥 Novo Pedido de Verificação", color=discord.Color.blue())
         embed.add_field(name="Membro a verificar", value=interaction.user.mention, inline=False)
         embed.add_field(name="Diz conhecer", value=self.referencia.value, inline=False)
         embed.set_footer(text=f"ID do Membro: {interaction.user.id}")
-
         view_admin = AdminApprovalView(membro_a_verificar_id=interaction.user.id)
         await canal_logs.send(embed=embed, view=view_admin)
-        
         await interaction.response.send_message("✅ Seu pedido foi enviado para a administração. Por favor, aguarde.", ephemeral=True)
 
 
 class VerificationView(ui.View):
-    """A View principal com o botão 'Iniciar Verificação' que fica na mensagem."""
+    # ... (esta classe não precisa de alterações)
     def __init__(self):
         super().__init__(timeout=None)
-
     @ui.button(label="Iniciar Verificação", style=discord.ButtonStyle.blurple, custom_id="iniciar_verificacao_ref")
     async def button_callback(self, interaction: discord.Interaction, button: ui.Button):
         modal = VerificationModal()
@@ -98,7 +92,6 @@ class VerificationView(ui.View):
 
 
 # --- CLASSE PRINCIPAL DO COG ---
-
 class VerificacaoCog(commands.Cog):
     """Cog que agrupa todos os comandos e lógicas de verificação."""
     def __init__(self, bot: commands.Bot):
@@ -114,7 +107,6 @@ class VerificacaoCog(commands.Cog):
     @setup.command(name="verif")
     @commands.has_permissions(administrator=True)
     async def setup_verif(self, ctx: commands.Context):
-        """Cria a mensagem de verificação por referência no canal atual."""
         embed = discord.Embed(
             title="Sistema de Verificação por Referência",
             description="Para ter acesso ao servidor, por favor, inicie o processo de verificação.\n\nVocê precisará indicar o nome de um membro que já conhece e que está no servidor.",
