@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 class TomaLerda(commands.Cog):
     def __init__(self, bot):
@@ -45,7 +45,7 @@ class TomaLerda(commands.Cog):
                     return  # Não faz nada se não encontrar mensagens
                 
                 # Separa mensagens por idade (Discord só permite bulk delete em mensagens de até 14 dias)
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 two_weeks_ago = now - timedelta(days=14)
                 
                 recent_messages = []
